@@ -1,36 +1,32 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="neon" data-shape="rounded" data-font="medium">
+<html lang="fr" data-theme="light" data-shape="rounded" data-font="medium">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0a0a18">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#eef1f7">
   <title>Application sportive</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Icônes (Lucide) et Chart.js viennent de jsDelivr : on ouvre la connexion tôt -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <!-- Fond animé -->
-  <div class="bg-fx" aria-hidden="true"><span></span><span></span><span></span></div>
-
-  <!-- Dégradés des anneaux -->
+  <!-- Dégradés des anneaux (couleurs façon Apple Watch) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
     <defs>
-      <linearGradient id="gradKcal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb300"/><stop offset="1" stop-color="#ff3d77"/></linearGradient>
-      <linearGradient id="gradProt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00e0ff"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
-      <linearGradient id="gradMove" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c6ff00"/><stop offset="1" stop-color="#00c896"/></linearGradient>
+      <linearGradient id="gradKcal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fa114f"/><stop offset="1" stop-color="#ff5c9a"/></linearGradient>
+      <linearGradient id="gradProt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00b4ff"/><stop offset="1" stop-color="#1eeaef"/></linearGradient>
+      <linearGradient id="gradMove" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4cd964"/><stop offset="1" stop-color="#b4ff39"/></linearGradient>
     </defs>
   </svg>
 
   <header class="app-header">
     <div class="brand">
-      <span class="logo" aria-hidden="true">⚡</span>
-      <h1 class="grad-text" data-i18n="appTitle">Application sportive</h1>
+      <span class="logo" aria-hidden="true"><i data-ic="activity"></i></span>
+      <h1 data-i18n="appTitle">Application sportive</h1>
     </div>
     <div class="hud">
-      <div class="hud-streak" id="hudStreak"><span class="fire" aria-hidden="true">🔥</span><b id="hudStreakN">0</b></div>
+      <div class="hud-streak" id="hudStreak"><i data-ic="flame" class="fire"></i><b id="hudStreakN">0</b></div>
       <div class="hud-level" id="hudLevelBox">
         <div class="lvl-badge" id="hudLevel">1</div>
         <div class="hud-xp">
@@ -43,13 +39,13 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-tab="dashboard" type="button"><span class="tab-ico">🏠</span><span class="tab-label" data-i18n="tabDashboard">Accueil</span></button>
-    <button class="tab" data-tab="bmi" type="button"><span class="tab-ico">🧮</span><span class="tab-label" data-i18n="tabBmi">IMC</span></button>
-    <button class="tab" data-tab="foods" type="button"><span class="tab-ico">🥗</span><span class="tab-label" data-i18n="tabFoods">Aliments</span></button>
-    <button class="tab" data-tab="journal" type="button"><span class="tab-ico">📝</span><span class="tab-label" data-i18n="tabJournal">Journal</span></button>
-    <button class="tab" data-tab="stats" type="button"><span class="tab-ico">📊</span><span class="tab-label" data-i18n="tabStats">Statistiques</span></button>
-    <button class="tab" data-tab="trophies" type="button"><span class="tab-ico">🏆</span><span class="tab-label" data-i18n="tabTrophies">Trophées</span></button>
-    <button class="tab" data-tab="settings" type="button"><span class="tab-ico">⚙️</span><span class="tab-label" data-i18n="tabSettings">Paramètres</span></button>
+    <button class="tab active" data-tab="dashboard" type="button"><span class="tab-ico"><i data-ic="house"></i></span><span class="tab-label" data-i18n="tabDashboard">Accueil</span></button>
+    <button class="tab" data-tab="bmi" type="button"><span class="tab-ico"><i data-ic="calculator"></i></span><span class="tab-label" data-i18n="tabBmi">IMC</span></button>
+    <button class="tab" data-tab="foods" type="button"><span class="tab-ico"><i data-ic="salad"></i></span><span class="tab-label" data-i18n="tabFoods">Aliments</span></button>
+    <button class="tab" data-tab="journal" type="button"><span class="tab-ico"><i data-ic="notebook-pen"></i></span><span class="tab-label" data-i18n="tabJournal">Journal</span></button>
+    <button class="tab" data-tab="stats" type="button"><span class="tab-ico"><i data-ic="chart-column"></i></span><span class="tab-label" data-i18n="tabStats">Statistiques</span></button>
+    <button class="tab" data-tab="trophies" type="button"><span class="tab-ico"><i data-ic="trophy"></i></span><span class="tab-label" data-i18n="tabTrophies">Trophées</span></button>
+    <button class="tab" data-tab="settings" type="button"><span class="tab-ico"><i data-ic="settings"></i></span><span class="tab-label" data-i18n="tabSettings">Paramètres</span></button>
   </nav>
 
   <main>
@@ -62,7 +58,7 @@
           <p class="muted" id="heroMotto"></p>
         </div>
         <div class="hero-streak" id="heroStreakBox">
-          <span class="flame" aria-hidden="true">🔥</span>
+          <span class="flame"><i data-ic="flame"></i></span>
           <div><b id="heroStreak">0</b><span id="heroStreakText"></span></div>
         </div>
       </div>
@@ -75,7 +71,7 @@
           </div>
           <div class="ring-info">
             <span class="card-label" data-i18n="todayCalories">Calories aujourd'hui</span>
-            <span class="ring-pct grad-text" id="ringKcalPct">0%</span>
+            <span class="ring-pct" id="ringKcalPct">0%</span>
             <span class="ring-goal muted" id="ringKcalGoal"></span>
           </div>
         </div>
@@ -86,7 +82,7 @@
           </div>
           <div class="ring-info">
             <span class="card-label" data-i18n="todayProtein">Protéines aujourd'hui</span>
-            <span class="ring-pct grad-text" id="ringProtPct">0%</span>
+            <span class="ring-pct" id="ringProtPct">0%</span>
             <span class="ring-goal muted" id="ringProtGoal"></span>
           </div>
         </div>
@@ -97,16 +93,16 @@
           </div>
           <div class="ring-info">
             <span class="card-label" data-i18n="todayMove">Sport aujourd'hui</span>
-            <span class="ring-pct grad-text" id="ringMovePct">0%</span>
+            <span class="ring-pct" id="ringMovePct">0%</span>
             <span class="ring-goal muted" id="ringMoveGoal"></span>
           </div>
         </div>
       </div>
 
       <div class="cards">
-        <div class="card stat-card lift"><span class="stat-ico">🧮</span><div><span class="card-label" data-i18n="currentBmi">IMC actuel</span><span class="card-value" id="dashBmi">–</span><span class="card-sub" id="dashBmiCat"></span></div></div>
-        <div class="card stat-card lift"><span class="stat-ico">⚖️</span><div><span class="card-label" data-i18n="lastWeight">Dernier poids</span><span class="card-value" id="dashWeight">–</span></div></div>
-        <div class="card stat-card lift"><span class="stat-ico">🏃</span><div><span class="card-label" data-i18n="weekWorkouts">Sport (7 derniers jours)</span><span class="card-value" id="dashWorkouts">0 min</span></div></div>
+        <div class="card stat-card lift"><span class="stat-ico"><i data-ic="calculator"></i></span><div><span class="card-label" data-i18n="currentBmi">IMC actuel</span><span class="card-value" id="dashBmi">–</span><span class="card-sub" id="dashBmiCat"></span></div></div>
+        <div class="card stat-card lift"><span class="stat-ico"><i data-ic="scale"></i></span><div><span class="card-label" data-i18n="lastWeight">Dernier poids</span><span class="card-value" id="dashWeight">–</span></div></div>
+        <div class="card stat-card lift"><span class="stat-ico"><i data-ic="footprints"></i></span><div><span class="card-label" data-i18n="weekWorkouts">Sport (7 derniers jours)</span><span class="card-value" id="dashWorkouts">0 min</span></div></div>
       </div>
 
       <div class="grid-2">
@@ -251,7 +247,7 @@
             <p class="muted small" id="journalTotals"></p>
           </div>
           <div class="card ai-card">
-            <h3><span data-i18n="aiTitle">Saisie par IA</span></h3>
+            <div class="card-head"><h3 data-i18n="aiTitle">Saisie par IA</h3><span class="chip"><i data-ic="sparkles"></i></span></div>
             <p class="muted small" data-i18n="aiSoon">Bientôt disponible.</p>
             <textarea disabled data-i18n-placeholder="aiPlaceholder"></textarea>
             <button class="btn" type="button" disabled data-i18n="aiAnalyze">Analyser</button>
@@ -317,10 +313,10 @@
           <h3 data-i18n="appearance">Affichage</h3>
           <label><span data-i18n="theme">Fond (thème)</span>
             <select id="setTheme">
+              <option value="light" data-i18n="themeLight">Clair</option>
+              <option value="dark" data-i18n="themeDark">Sombre</option>
               <option value="neon" data-i18n="themeNeon">Néon</option>
               <option value="volt" data-i18n="themeVolt">Volt</option>
-              <option value="dark" data-i18n="themeDark">Sombre</option>
-              <option value="light" data-i18n="themeLight">Clair</option>
               <option value="ocean" data-i18n="themeOcean">Océan</option>
               <option value="forest" data-i18n="themeForest">Forêt</option>
               <option value="sunset" data-i18n="themeSunset">Coucher de soleil</option>
@@ -396,7 +392,7 @@
       <p class="eyebrow" id="celEyebrow"></p>
       <div class="celebrate-icon" id="celIcon"></div>
       <h3 id="celTitle"></h3>
-      <p class="muted" id="celText"></p>
+      <p class="muted cel-text" id="celText"></p>
       <div class="cel-badges" id="celBadges"></div>
       <button class="btn btn-block" type="button" id="celClose" data-i18n="awesome">Génial !</button>
     </div>
@@ -405,6 +401,8 @@
   <canvas id="confetti" aria-hidden="true"></canvas>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <!-- Chart.js est chargé à la demande (onglet Statistiques) depuis js/app.js -->
+  <script src="js/icons.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/foods.js"></script>
   <script src="js/storage.js"></script>

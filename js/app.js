@@ -12,6 +12,11 @@
   const charts = {};
   const reducedMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
+  // Chart.js (~200 Ko) n'est téléchargé que lorsqu'on ouvre l'onglet Statistiques
+  const CHART_URL = "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js";
+  let chartPromise = null;
+  let statsToken = 0;
+
   const $ = sel => document.querySelector(sel);
   const $$ = sel => document.querySelectorAll(sel);
 
@@ -39,16 +44,16 @@
   }
 
   let toastTimer;
-  function toast(msg) {
+  function toast(msg, ic) {
     const el = $("#toast");
-    el.textContent = msg;
+    el.innerHTML = (ic ? icon(ic) : "") + `<span>${esc(msg)}</span>`;
     el.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
   }
 
-  const statCard = (icon, label, value) =>
-    `<div class="card stat-card lift"><span class="stat-ico">${icon}</span><div>` +
+  const statCard = (ic, label, value) =>
+    `<div class="card stat-card lift"><span class="stat-ico">${icon(ic)}</span><div>` +
     `<span class="card-label">${esc(label)}</span><span class="card-value">${esc(value)}</span></div></div>`;
 
   /* ---------- Effets : confettis, XP flottante, compteurs, anneaux ---------- */
@@ -59,7 +64,7 @@
     let ctx = null;
 
     function resize() {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = innerWidth * dpr;
       canvas.height = innerHeight * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -67,7 +72,7 @@
 
     function fire(count, x, y) {
       if (reducedMotion) return;
-      count = count || 140;
+      count = count || 120;
       x = x === undefined ? 0.5 : x;
       y = y === undefined ? 0.4 : y;
       if (!canvas) {
@@ -75,7 +80,8 @@
         ctx = canvas.getContext("2d");
       }
       if (!raf) resize();
-      const colors = [cssVar("--primary"), cssVar("--primary-2"), "#ff3d77", "#ffd23f", "#2ee6a6", "#ffffff"];
+      // Palette Apple
+      const colors = [cssVar("--primary"), "#ff2d55", "#ff9500", "#ffcc00", "#34c759", "#5ac8fa", "#af52de"];
       for (let i = 0; i < count; i++) {
         const a = Math.random() * Math.PI * 2;
         const v = 4 + Math.random() * 10;
@@ -180,26 +186,26 @@
       $("#celEyebrow").textContent = t("levelUp");
       $("#celIcon").innerHTML = `<span class="lvl-orb">${ev.levelUp}</span>`;
       $("#celTitle").textContent = t("levelUpText", { n: ev.levelUp });
-      $("#celText").textContent = `${r.icon} ${t("rank_" + r.id)}`;
+      $("#celText").innerHTML = `${icon(r.icon)}<span>${esc(t("rank_" + r.id))}</span>`;
     } else {
       const b = badges[0];
       $("#celEyebrow").textContent = badges.length > 1 ? t("newBadges", { n: badges.length }) : t("newBadge");
-      $("#celIcon").textContent = b.icon;
+      $("#celIcon").innerHTML = `<span class="cel-badge-ico">${icon(b.icon)}</span>`;
       $("#celTitle").textContent = t("b_" + b.id);
-      $("#celText").textContent = t("bd_" + b.id) + (b.xp ? ` · +${b.xp} XP` : "");
+      $("#celText").innerHTML = `<span>${esc(t("bd_" + b.id) + (b.xp ? ` · +${b.xp} XP` : ""))}</span>`;
     }
     const chips = ev.levelUp ? badges : badges.slice(1);
     $("#celBadges").innerHTML = chips.map(b =>
-      `<span class="cel-chip">${b.icon} ${esc(t("b_" + b.id))}${b.xp ? ` <b>+${b.xp} XP</b>` : ""}</span>`
+      `<span class="cel-chip">${icon(b.icon)}${esc(t("b_" + b.id))}${b.xp ? ` <b>+${b.xp} XP</b>` : ""}</span>`
     ).join("");
 
     const box = $("#celebrate");
     box.hidden = false;
     void box.offsetWidth;
     box.classList.add("show");
-    Confetti.fire(180, 0.5, 0.35);
-    setTimeout(() => Confetti.fire(90, 0.15, 0.7), 250);
-    setTimeout(() => Confetti.fire(90, 0.85, 0.7), 450);
+    Confetti.fire(150, 0.5, 0.35);
+    setTimeout(() => Confetti.fire(70, 0.15, 0.7), 250);
+    setTimeout(() => Confetti.fire(70, 0.85, 0.7), 450);
     $("#celClose").focus();
   }
 
@@ -259,7 +265,7 @@
     root.dataset.shape = s.shape;
     root.dataset.font = s.font;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = cssVar("--bg") || "#0a0a18";
+    if (meta) meta.content = cssVar("--bg") || "#eef1f7";
   }
 
   function fillSelect(el, items) {
@@ -309,7 +315,7 @@
   function renderHud() {
     const L = Game.levelInfo();
     $("#hudLevel").textContent = L.level;
-    $("#hudTitle").textContent = `${L.rank.icon} ${t("rank_" + L.rank.id)}`;
+    $("#hudTitle").innerHTML = `${icon(L.rank.icon)}<span>${esc(t("rank_" + L.rank.id))}</span>`;
     $("#hudXp").textContent = `${fmt(L.into)} / ${fmt(L.need)} XP`;
     $("#hudXpFill").style.width = (L.pct * 100).toFixed(1) + "%";
     const s = Game.currentStreak();
@@ -319,16 +325,17 @@
   }
 
   /* ---------- Rendu : éléments de liste ---------- */
-  function entryHtml(col, id, title, meta) {
-    return `<li class="entry"><div><span class="entry-title">${esc(title)}</span><span class="entry-meta">${esc(meta)}</span></div>` +
-      `<button class="icon-btn" type="button" data-col="${col}" data-id="${esc(id)}" title="${esc(t("delete"))}" aria-label="${esc(t("delete"))}">✕</button></li>`;
+  function entryHtml(col, id, ic, title, meta) {
+    return `<li class="entry"><span class="entry-ico">${icon(ic)}</span>` +
+      `<div><span class="entry-title">${esc(title)}</span><span class="entry-meta">${esc(meta)}</span></div>` +
+      `<button class="icon-btn" type="button" data-col="${col}" data-id="${esc(id)}" title="${esc(t("delete"))}" aria-label="${esc(t("delete"))}">${icon("x")}</button></li>`;
   }
   function mealItems(meals) {
     const out = [];
     MEAL_TYPES.forEach(mt => {
       meals.filter(m => m.mealType === mt).forEach(m => {
         const grams = m.grams ? ` (${fmt(m.grams)} g)` : "";
-        out.push(entryHtml("meals", m.id, `🍽️ ${t(mt)} — ${m.name}${grams}`,
+        out.push(entryHtml("meals", m.id, "utensils", `${t(mt)} — ${m.name}${grams}`,
           `${fmt(m.kcal)} kcal · ${t("protein")} ${fmt(m.protein, 1)} g`));
       });
     });
@@ -387,12 +394,12 @@
       const pct = q.max ? Math.min(100, (q.cur / q.max) * 100) : 0;
       const unit = q.unit ? " " + q.unit : "";
       let action;
-      if (q.claimed) action = `<span class="quest-done" aria-label="OK">✔</span>`;
+      if (q.claimed) action = `<span class="quest-done" aria-label="OK">${icon("check")}</span>`;
       else if (q.done) action = `<button class="btn btn-claim" type="button" data-claim="${q.id}">${esc(t("claim"))} +${Game.XP.quest}</button>`;
       else action = `<span class="quest-xp">+${Game.XP.quest} XP</span>`;
       const cls = ["quest", q.claimed ? "claimed" : q.done ? "ready" : "", q.over ? "over" : ""].join(" ");
       return `<li class="${cls}">
-        <span class="quest-ico">${q.icon}</span>
+        <span class="quest-ico">${icon(q.icon)}</span>
         <div class="quest-body">
           <div class="quest-top"><span class="quest-title">${esc(t("q_" + q.id, { n: q.max }))}</span>
           <span class="quest-meta">${fmt(q.cur)}${unit} / ${fmt(q.max)}${unit}</span></div>
@@ -419,15 +426,15 @@
     const unlocked = list.filter(b => b.unlocked).length;
 
     $("#trLevel").textContent = L.level;
-    $("#trRank").textContent = `${L.rank.icon} ${t("rank_" + L.rank.id)}`;
+    $("#trRank").innerHTML = `${icon(L.rank.icon)}<span>${esc(t("rank_" + L.rank.id))}</span>`;
     $("#trXpFill").style.width = (L.pct * 100).toFixed(1) + "%";
     $("#trXpText").textContent = t("nextLevel", { cur: fmt(L.into), need: fmt(L.need), n: L.level + 1 });
 
     $("#trStats").innerHTML = [
-      ["✨", t("totalXp"), fmt(L.xp)],
-      ["🔥", t("bestStreak"), `${st.bestStreak} ${t("daysShort")}`],
-      ["🎖️", t("perfectDays"), fmt(st.perfectDays)],
-      ["🏅", t("badgesUnlocked"), `${unlocked} / ${list.length}`]
+      ["sparkles", t("totalXp"), fmt(L.xp)],
+      ["flame", t("bestStreak"), `${st.bestStreak} ${t("daysShort")}`],
+      ["badge-check", t("perfectDays"), fmt(st.perfectDays)],
+      ["medal", t("badgesUnlocked"), `${unlocked} / ${list.length}`]
     ].map(([i, l, v]) => statCard(i, l, v)).join("");
 
     $("#badgeGrid").innerHTML = list.map(b => {
@@ -437,8 +444,8 @@
         ? `<span class="badge-xp">${xpTxt ? xpTxt + " · " : ""}${esc(t("unlockedOn", { date: shortDate(b.date) }))}</span>`
         : `<div class="mini-bar"><div style="width:${pct}%"></div></div><span class="badge-xp muted">${fmt(b.cur)} / ${fmt(b.goal)}${xpTxt ? " · " + xpTxt : ""}</span>`;
       return `<div class="card badge-card lift${b.unlocked ? "" : " locked"}">
-        ${b.unlocked ? "" : '<span class="lock" aria-hidden="true">🔒</span>'}
-        <div class="badge-icon">${b.icon}</div>
+        ${b.unlocked ? "" : `<span class="lock">${icon("lock")}</span>`}
+        <div class="badge-icon">${icon(b.icon)}</div>
         <span class="badge-name">${esc(t("b_" + b.id))}</span>
         <span class="badge-desc">${esc(t("bd_" + b.id))}</span>
         ${footer}
@@ -447,18 +454,18 @@
 
     $("#rankList").innerHTML = Game.RANKS.map(r => {
       const cls = r.id === L.rank.id ? "current" : L.level < r.from ? "locked" : "";
-      return `<div class="rank ${cls}">${r.icon} ${esc(t("rank_" + r.id))} <small>${esc(t("rankFrom", { n: r.from }))}</small></div>`;
+      return `<div class="rank ${cls}">${icon(r.icon)}<span>${esc(t("rank_" + r.id))}</span><small>${esc(t("rankFrom", { n: r.from }))}</small></div>`;
     }).join("");
 
     const X = Game.XP;
     $("#xpRules").innerHTML = [
-      ["🍽️", t("xpRule_meal", { n: X.meal })],
-      ["⚖️", t("xpRule_weight", { n: X.weight })],
-      ["🏃", t("xpRule_workout", { n: X.workout })],
-      ["🎯", t("xpRule_quest", { n: X.quest })],
-      ["🏅", t("xpRule_badge")],
-      ["↩️", t("xpRule_note")]
-    ].map(([i, s]) => `<li><span>${i}</span>${esc(s)}</li>`).join("");
+      ["utensils", t("xpRule_meal", { n: X.meal })],
+      ["scale", t("xpRule_weight", { n: X.weight })],
+      ["dumbbell", t("xpRule_workout", { n: X.workout })],
+      ["target", t("xpRule_quest", { n: X.quest })],
+      ["award", t("xpRule_badge")],
+      ["undo-2", t("xpRule_note")]
+    ].map(([i, s]) => `<li><span class="rule-ico">${icon(i)}</span><span>${esc(s)}</span></li>`).join("");
   }
 
   /* ---------- IMC ---------- */
@@ -508,13 +515,13 @@
         <span style="left:40%">25</span><span style="left:60%">30</span><span style="left:100%">40</span>
       </div>
       <ul class="result-list">
-        <li>${esc(t("healthyRange"))} : <strong>${fmt(18.5 * m2, 1)} – ${fmt(24.9 * m2, 1)} kg</strong></li>
-        <li>${esc(t("bmr"))} : <strong>${fmt(r.bmr)} kcal</strong></li>
-        <li>${esc(t("tdee"))} : <strong>${fmt(r.tdee)} kcal</strong></li>
-        <li>${esc(t("kcalTargetLabel"))} : <strong>${fmt(r.target)} kcal</strong></li>
+        <li>${esc(t("healthyRange"))} <strong>${fmt(18.5 * m2, 1)} – ${fmt(24.9 * m2, 1)} kg</strong></li>
+        <li>${esc(t("bmr"))} <strong>${fmt(r.bmr)} kcal</strong></li>
+        <li>${esc(t("tdee"))} <strong>${fmt(r.tdee)} kcal</strong></li>
+        <li>${esc(t("kcalTargetLabel"))} <strong>${fmt(r.target)} kcal</strong></li>
       </ul>
       <button class="btn btn-block" type="button" id="bmiSave">${esc(t("saveToProfile"))}</button>
-      <p class="muted small">${esc(t("bmiDisclaimer"))}</p>`;
+      <p class="muted small mt-1">${esc(t("bmiDisclaimer"))}</p>`;
     $("#bmiSave").addEventListener("click", e => {
       const before = Game.totalXp();
       Object.assign(S().profile, {
@@ -523,7 +530,7 @@
       Store.addWeight(todayISO(), r.w);
       Game.setFlag("bmiSaved");
       prefillSettings();
-      toast(t("savedProfile"));
+      toast(t("savedProfile"), "check");
       afterAction(before, e.currentTarget);
     });
   }
@@ -556,7 +563,7 @@
         <td class="num">${fmt(f.protein, 1)} g</td>
         <td class="num">${fmt(f.carbs, 1)} g</td>
         <td class="num">${fmt(f.fat, 1)} g</td>
-        <td class="num"><button class="btn btn-small" type="button" data-add-food="${esc(f.id)}">+ ${esc(t("add"))}</button></td>
+        <td class="num"><button class="btn btn-small" type="button" data-add-food="${esc(f.id)}">${icon("plus")}${esc(t("add"))}</button></td>
       </tr>`).join("");
   }
 
@@ -609,7 +616,7 @@
     });
     $("#addFoodDialog").close();
     pendingFood = null;
-    toast(t("mealAdded"));
+    toast(t("mealAdded"), "check");
     afterAction(before, null);
   }
 
@@ -621,10 +628,10 @@
     const date = journalDate();
     const items = mealItems(Store.mealsOn(date));
     Store.workoutsOn(date).forEach(w => {
-      items.push(entryHtml("workouts", w.id, `🏃 ${t(w.type)} — ${fmt(w.minutes)} min`, `−${fmt(w.kcal)} kcal`));
+      items.push(entryHtml("workouts", w.id, "dumbbell", `${t(w.type)} — ${fmt(w.minutes)} min`, `−${fmt(w.kcal)} kcal`));
     });
     const wt = Store.weightOn(date);
-    if (wt) items.push(entryHtml("weights", wt.id, `⚖️ ${t("weightShort")}`, `${fmt(wt.kg, 1)} kg`));
+    if (wt) items.push(entryHtml("weights", wt.id, "scale", t("weightShort"), `${fmt(wt.kg, 1)} kg`));
 
     $("#journalList").innerHTML = items.length ? items.join("") : `<li class="muted">${esc(t("noEntries"))}</li>`;
     const tot = Store.dayTotals(date);
@@ -649,7 +656,7 @@
     const keepType = $("#mealType").value;
     e.target.reset();
     $("#mealType").value = keepType;
-    toast(t("mealAdded"));
+    toast(t("mealAdded"), "check");
     afterAction(before, submitBtn(e.target));
   }
 
@@ -660,7 +667,7 @@
     const before = Game.totalXp();
     Store.addWeight(journalDate(), kg);
     e.target.reset();
-    toast(t("weightAdded"));
+    toast(t("weightAdded"), "check");
     prefillBmi();
     afterAction(before, submitBtn(e.target));
   }
@@ -679,34 +686,56 @@
     Store.addWorkout({ date: journalDate(), type, minutes, kcal });
     e.target.reset();
     $("#workoutType").value = type;
-    toast(t("workoutAdded"));
+    toast(t("workoutAdded"), "check");
     afterAction(before, submitBtn(e.target));
   }
 
   /* ---------- Statistiques ---------- */
+  /** Charge Chart.js une seule fois, à la demande. Renvoie une promesse (true = prêt). */
+  function loadChart() {
+    if (typeof Chart !== "undefined") return Promise.resolve(true);
+    if (!chartPromise) {
+      chartPromise = new Promise(resolve => {
+        const s = document.createElement("script");
+        s.src = CHART_URL;
+        s.async = true;
+        s.onload = () => {
+          Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+          resolve(true);
+        };
+        s.onerror = () => {
+          chartPromise = null;
+          s.remove();
+          resolve(false);
+        };
+        document.head.appendChild(s);
+      });
+    }
+    return chartPromise;
+  }
+
   function drawChart(id, config, beginAtZero = true) {
     if (charts[id]) {
       charts[id].destroy();
       delete charts[id];
-    }
-    if (typeof Chart === "undefined") {
-      $("#statsNotice").hidden = false;
-      return;
     }
     const text = cssVar("--muted");
     const grid = cssVar("--track");
     const options = {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: text, font: { family: "Outfit", weight: "600" } } } }
+      animation: reducedMotion ? false : { duration: 600 },
+      plugins: {
+        legend: { labels: { color: text, usePointStyle: true, boxWidth: 8, boxHeight: 8, font: { weight: "600" } } }
+      }
     };
     if (config.type !== "doughnut") {
       options.scales = {
-        x: { ticks: { color: text, maxRotation: 0, autoSkip: true }, grid: { color: grid } },
-        y: { ticks: { color: text }, grid: { color: grid }, beginAtZero }
+        x: { ticks: { color: text, maxRotation: 0, autoSkip: true }, grid: { display: false }, border: { display: false } },
+        y: { ticks: { color: text }, grid: { color: grid }, border: { display: false }, beginAtZero }
       };
     } else {
-      options.cutout = "68%";
+      options.cutout = "70%";
     }
     config.options = options;
     charts[id] = new Chart(document.getElementById(id), config);
@@ -733,47 +762,55 @@
     const totalMin = minutes.reduce((a, b) => a + b, 0);
 
     $("#statsSummary").innerHTML = [
-      ["🔥", t("avgKcal"), `${fmt(avg)} kcal`],
-      ["⏱️", t("totalWorkout"), `${fmt(totalMin)} min`],
-      ["⚖️", t("weightChange"), change === null ? "–" : `${change > 0 ? "+" : ""}${fmt(change, 1)} kg`],
-      ["📅", t("daysLogged"), `${logged} / ${n}`]
+      ["flame", t("avgKcal"), `${fmt(avg)} kcal`],
+      ["timer", t("totalWorkout"), `${fmt(totalMin)} min`],
+      ["scale", t("weightChange"), change === null ? "–" : `${change > 0 ? "+" : ""}${fmt(change, 1)} kg`],
+      ["calendar-days", t("daysLogged"), `${logged} / ${n}`]
     ].map(([i, l, v]) => statCard(i, l, v)).join("");
 
-    const primary = cssVar("--primary");
-    const primary2 = cssVar("--primary-2");
-    drawChart("chartWeight", {
-      type: "line",
-      data: {
-        labels,
-        datasets: [{
-          label: "kg", data: weights, borderColor: primary, backgroundColor: primary + "33",
-          pointBackgroundColor: primary2, pointRadius: 4, borderWidth: 3, fill: true, spanGaps: true, tension: 0.35
-        }]
-      }
-    }, false);
-    drawChart("chartKcal", {
-      type: "bar",
-      data: {
-        labels,
-        datasets: [
-          { label: t("consumed"), data: kcal, backgroundColor: primary, borderRadius: 8 },
-          { type: "line", label: t("target"), data: days.map(() => target), borderColor: cssVar("--danger"), borderDash: [6, 4], pointRadius: 0, fill: false }
-        ]
-      }
-    });
-    drawChart("chartMacros", {
-      type: "doughnut",
-      data: {
-        labels: [t("protein"), t("carbs"), t("fat")],
-        datasets: [{
-          data: [macro.p * 4, macro.c * 4, macro.f * 9].map(v => Math.round(v)),
-          backgroundColor: [primary, primary2, cssVar("--warn")], borderWidth: 0, hoverOffset: 10
-        }]
-      }
-    });
-    drawChart("chartWorkouts", {
-      type: "bar",
-      data: { labels, datasets: [{ label: t("minutes"), data: minutes, backgroundColor: primary2, borderRadius: 8 }] }
+    const token = ++statsToken;
+    loadChart().then(ok => {
+      if (token !== statsToken || !$("#stats").classList.contains("active")) return;
+      $("#statsNotice").hidden = ok;
+      if (!ok) return;
+
+      const primary = cssVar("--primary");
+      const primary2 = cssVar("--primary-2");
+      drawChart("chartWeight", {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "kg", data: weights, borderColor: primary, backgroundColor: primary + "26",
+            pointBackgroundColor: primary, pointBorderColor: "#fff", pointBorderWidth: 2, pointRadius: 4,
+            borderWidth: 3, fill: true, spanGaps: true, tension: 0.4
+          }]
+        }
+      }, false);
+      drawChart("chartKcal", {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            { label: t("consumed"), data: kcal, backgroundColor: primary, borderRadius: 8, borderSkipped: false, maxBarThickness: 22 },
+            { type: "line", label: t("target"), data: days.map(() => target), borderColor: cssVar("--danger"), borderDash: [6, 4], borderWidth: 2, pointRadius: 0, fill: false }
+          ]
+        }
+      });
+      drawChart("chartMacros", {
+        type: "doughnut",
+        data: {
+          labels: [t("protein"), t("carbs"), t("fat")],
+          datasets: [{
+            data: [macro.p * 4, macro.c * 4, macro.f * 9].map(v => Math.round(v)),
+            backgroundColor: [primary, primary2, cssVar("--warn")], borderWidth: 0, borderRadius: 6, spacing: 3, hoverOffset: 8
+          }]
+        }
+      });
+      drawChart("chartWorkouts", {
+        type: "bar",
+        data: { labels, datasets: [{ label: t("minutes"), data: minutes, backgroundColor: primary2, borderRadius: 8, borderSkipped: false, maxBarThickness: 22 }] }
+      });
     });
   }
 
@@ -820,7 +857,7 @@
     reader.onload = () => {
       try {
         Store.importJSON(reader.result);
-        toast(t("importOk"));
+        toast(t("importOk"), "check");
         setTimeout(() => location.reload(), 600);
       } catch (err) {
         toast(t("importError"));
@@ -843,6 +880,8 @@
 
   function bindEvents() {
     $$(".tab").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+    // Pré-chargement de Chart.js dès que le doigt / la souris approche de l'onglet
+    $('.tab[data-tab="stats"]').addEventListener("pointerenter", () => loadChart(), { once: true });
     $("#langToggle").addEventListener("click", () => setLang(lang === "fr" ? "en" : "fr"));
 
     $("#bmiForm").addEventListener("submit", onBmiSubmit);
@@ -869,8 +908,8 @@
       const before = Game.totalXp();
       const r = b.getBoundingClientRect();
       if (Game.claimQuest(b.dataset.claim)) {
-        Confetti.fire(70, (r.left + r.width / 2) / innerWidth, r.top / innerHeight);
-        toast(t("questClaimed", { xp: Game.XP.quest }));
+        Confetti.fire(60, (r.left + r.width / 2) / innerWidth, r.top / innerHeight);
+        toast(t("questClaimed", { xp: Game.XP.quest }), "check");
         afterAction(before, b);
       }
     });
@@ -881,7 +920,7 @@
       if (!b) return;
       const before = Game.totalXp();
       Store.remove(b.dataset.col, b.dataset.id);
-      toast(t("deleted"));
+      toast(t("deleted"), "trash-2");
       afterAction(before, b);
     });
 
@@ -900,7 +939,7 @@
       if (k >= 800 && k <= 6000) S().profile.kcalTarget = Math.round(k);
       Store.save();
       prefillSettings();
-      toast(t("saved"));
+      toast(t("saved"), "check");
       renderAll();
     });
     $("#exportData").addEventListener("click", exportData);
@@ -914,6 +953,7 @@
   }
 
   function init() {
+    hydrateIcons();
     applyAppearance();
     applyTranslations();
     $("#journalDate").value = todayISO();

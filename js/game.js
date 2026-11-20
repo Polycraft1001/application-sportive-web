@@ -5,6 +5,9 @@
    supprimer une entrée retire donc l'XP qu'elle avait rapportée.
    Les quêtes récupérées et les badges débloqués sont enregistrés
    dans Store.data.game.
+
+   Le champ « icon » contient le nom d'une icône Lucide
+   (voir js/icons.js et https://lucide.dev/icons).
    ========================================================= */
 const Game = (function () {
   "use strict";
@@ -19,13 +22,13 @@ const Game = (function () {
   const DAILY_MOVE = 30; // objectif de l'anneau « Sport aujourd'hui »
 
   const RANKS = [
-    { from: 1, id: "rookie", icon: "🌱" },
-    { from: 3, id: "warmup", icon: "🔥" },
-    { from: 5, id: "athlete", icon: "⚡" },
-    { from: 8, id: "machine", icon: "🤖" },
-    { from: 12, id: "champion", icon: "🏆" },
-    { from: 16, id: "titan", icon: "🦾" },
-    { from: 20, id: "legend", icon: "👑" }
+    { from: 1, id: "rookie", icon: "sprout" },
+    { from: 3, id: "warmup", icon: "flame" },
+    { from: 5, id: "athlete", icon: "zap" },
+    { from: 8, id: "machine", icon: "cpu" },
+    { from: 12, id: "champion", icon: "trophy" },
+    { from: 16, id: "titan", icon: "shield" },
+    { from: 20, id: "legend", icon: "crown" }
   ];
 
   const g = () => Store.data.game;
@@ -124,14 +127,14 @@ const Game = (function () {
   const minutesOn = date => Store.workoutsOn(date).reduce((s, w) => s + w.minutes, 0);
 
   const QUESTS = [
-    { id: "meals3", icon: "🍽️", state: d => { const n = Store.mealsOn(d).length; return { cur: n, max: 3, done: n >= 3 }; } },
-    { id: "move", icon: "🏃", state: d => { const n = minutesOn(d); return { cur: n, max: MOVE_GOAL, done: n >= MOVE_GOAL, unit: "min" }; } },
-    { id: "kcal", icon: "🎯", state: d => {
+    { id: "meals3", icon: "utensils", state: d => { const n = Store.mealsOn(d).length; return { cur: n, max: 3, done: n >= 3 }; } },
+    { id: "move", icon: "footprints", state: d => { const n = minutesOn(d); return { cur: n, max: MOVE_GOAL, done: n >= MOVE_GOAL, unit: "min" }; } },
+    { id: "kcal", icon: "target", state: d => {
       const k = Math.round(Store.dayTotals(d).kcal);
       const t = kcalGoal();
       return { cur: k, max: t, done: k >= t * 0.9 && k <= t * 1.1, over: k > t * 1.1, unit: "kcal" };
     } },
-    { id: "weigh", icon: "⚖️", state: d => { const n = Store.weightOn(d) ? 1 : 0; return { cur: n, max: 1, done: n === 1 }; } }
+    { id: "weigh", icon: "scale", state: d => { const n = Store.weightOn(d) ? 1 : 0; return { cur: n, max: 1, done: n === 1 }; } }
   ];
 
   function quests(date) {
@@ -171,24 +174,24 @@ const Game = (function () {
 
   const flag = k => s => (s.flags[k] ? 1 : 0);
   const BADGES = [
-    { id: "firstMeal", icon: "🍽️", xp: 25, goal: 1, val: s => s.meals },
-    { id: "firstWorkout", icon: "👟", xp: 25, goal: 1, val: s => s.workouts },
-    { id: "firstWeigh", icon: "⚖️", xp: 25, goal: 1, val: s => s.weights },
-    { id: "bmiPro", icon: "🧮", xp: 25, goal: 1, val: flag("bmiSaved") },
-    { id: "streak3", icon: "🔥", xp: 50, goal: 3, val: s => s.bestStreak },
-    { id: "streak7", icon: "🚀", xp: 100, goal: 7, val: s => s.bestStreak },
-    { id: "streak30", icon: "☄️", xp: 300, goal: 30, val: s => s.bestStreak },
-    { id: "workouts10", icon: "💪", xp: 100, goal: 10, val: s => s.workouts },
-    { id: "workouts50", icon: "🏋️", xp: 250, goal: 50, val: s => s.workouts },
-    { id: "minutes600", icon: "⏱️", xp: 150, goal: 600, val: s => s.minutes },
-    { id: "meals50", icon: "📒", xp: 100, goal: 50, val: s => s.meals },
-    { id: "protein", icon: "🥩", xp: 50, goal: 1, val: s => s.proteinDays },
-    { id: "perfect", icon: "🎖️", xp: 100, goal: 1, val: s => s.perfectDays },
-    { id: "perfect7", icon: "🏅", xp: 250, goal: 7, val: s => s.perfectDays },
-    { id: "level5", icon: "⭐", xp: 0, goal: 5, val: s => s.level },
-    { id: "level10", icon: "🌟", xp: 0, goal: 10, val: s => s.level },
-    { id: "explorer", icon: "🎨", xp: 25, goal: 1, val: flag("themeChanged") },
-    { id: "polyglot", icon: "🌍", xp: 25, goal: 1, val: flag("langChanged") }
+    { id: "firstMeal", icon: "utensils", xp: 25, goal: 1, val: s => s.meals },
+    { id: "firstWorkout", icon: "footprints", xp: 25, goal: 1, val: s => s.workouts },
+    { id: "firstWeigh", icon: "scale", xp: 25, goal: 1, val: s => s.weights },
+    { id: "bmiPro", icon: "calculator", xp: 25, goal: 1, val: flag("bmiSaved") },
+    { id: "streak3", icon: "flame", xp: 50, goal: 3, val: s => s.bestStreak },
+    { id: "streak7", icon: "rocket", xp: 100, goal: 7, val: s => s.bestStreak },
+    { id: "streak30", icon: "orbit", xp: 300, goal: 30, val: s => s.bestStreak },
+    { id: "workouts10", icon: "dumbbell", xp: 100, goal: 10, val: s => s.workouts },
+    { id: "workouts50", icon: "weight", xp: 250, goal: 50, val: s => s.workouts },
+    { id: "minutes600", icon: "timer", xp: 150, goal: 600, val: s => s.minutes },
+    { id: "meals50", icon: "book-open", xp: 100, goal: 50, val: s => s.meals },
+    { id: "protein", icon: "beef", xp: 50, goal: 1, val: s => s.proteinDays },
+    { id: "perfect", icon: "badge-check", xp: 100, goal: 1, val: s => s.perfectDays },
+    { id: "perfect7", icon: "medal", xp: 250, goal: 7, val: s => s.perfectDays },
+    { id: "level5", icon: "star", xp: 0, goal: 5, val: s => s.level },
+    { id: "level10", icon: "sparkles", xp: 0, goal: 10, val: s => s.level },
+    { id: "explorer", icon: "palette", xp: 25, goal: 1, val: flag("themeChanged") },
+    { id: "polyglot", icon: "languages", xp: 25, goal: 1, val: flag("langChanged") }
   ];
 
   function badges() {

@@ -51,7 +51,7 @@ function defaultData() {
   return {
     version: 1,
     profile: { name: "", sex: "m", age: null, heightCm: null, activity: 1.55, goal: "maintain", kcalTarget: 2000 },
-    settings: { lang: "fr", theme: "neon", shape: "rounded", font: "medium" },
+    settings: { lang: "fr", theme: "light", shape: "rounded", font: "medium" },
     weights: [],
     meals: [],
     workouts: [],
