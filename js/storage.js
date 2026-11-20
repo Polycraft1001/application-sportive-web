@@ -8,7 +8,8 @@
      settings: { lang, theme, shape, font },
      weights:  [{ id, date, kg }],
      meals:    [{ id, date, mealType, name, grams, kcal, protein, carbs, fat, foodId }],
-     workouts: [{ id, date, type, minutes, kcal }]
+     workouts: [{ id, date, type, minutes, kcal }],
+     game:     { badges: { id: date }, quests: { date: [questId] }, flags: {}, lastLevel }
    }
    Les dates sont au format ISO "AAAA-MM-JJ" (heure locale).
    Ce modèle correspond aux tables du fichier sql/schema.sql
@@ -42,14 +43,19 @@ function num(v) {
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 10) / 10 : 0;
 }
 
+function isObj(v) {
+  return !!v && typeof v === "object" && !Array.isArray(v);
+}
+
 function defaultData() {
   return {
     version: 1,
     profile: { name: "", sex: "m", age: null, heightCm: null, activity: 1.55, goal: "maintain", kcalTarget: 2000 },
-    settings: { lang: "fr", theme: "light", shape: "rounded", font: "medium" },
+    settings: { lang: "fr", theme: "neon", shape: "rounded", font: "medium" },
     weights: [],
     meals: [],
-    workouts: []
+    workouts: [],
+    game: { badges: {}, quests: {}, flags: {}, lastLevel: 1 }
   };
 }
 
@@ -70,13 +76,26 @@ const Store = {
   _merge(p) {
     const d = defaultData();
     if (!p || typeof p !== "object") return d;
+    const pg = isObj(p.game) ? p.game : {};
+    const quests = {};
+    if (isObj(pg.quests)) {
+      Object.keys(pg.quests).forEach(k => {
+        if (Array.isArray(pg.quests[k])) quests[k] = pg.quests[k].filter(x => typeof x === "string");
+      });
+    }
     return {
       version: d.version,
       profile: { ...d.profile, ...(p.profile || {}) },
       settings: { ...d.settings, ...(p.settings || {}) },
       weights: Array.isArray(p.weights) ? p.weights : [],
       meals: Array.isArray(p.meals) ? p.meals : [],
-      workouts: Array.isArray(p.workouts) ? p.workouts : []
+      workouts: Array.isArray(p.workouts) ? p.workouts : [],
+      game: {
+        badges: isObj(pg.badges) ? pg.badges : {},
+        quests,
+        flags: isObj(pg.flags) ? pg.flags : {},
+        lastLevel: Math.max(1, parseInt(pg.lastLevel, 10) || 1)
+      }
     };
   },
 
