@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light" data-shape="rounded" data-font="medium">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application sportive</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1 data-i18n="appTitle">Application sportive</h1>
+    <button id="langToggle" class="btn btn-small" type="button">EN</button>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="dashboard" data-i18n="tabDashboard">Tableau de bord</button>
+    <button class="tab" data-tab="bmi" data-i18n="tabBmi">IMC</button>
+    <button class="tab" data-tab="foods" data-i18n="tabFoods">Aliments</button>
+    <button class="tab" data-tab="journal" data-i18n="tabJournal">Journal</button>
+    <button class="tab" data-tab="stats" data-i18n="tabStats">Statistiques</button>
+    <button class="tab" data-tab="settings" data-i18n="tabSettings">Paramètres</button>
+  </nav>
+
+  <main>
+    <!-- ===== TABLEAU DE BORD ===== -->
+    <section id="dashboard" class="panel active">
+      <h2 id="greeting"></h2>
+      <div class="cards">
+        <div class="card">
+          <span class="card-label" data-i18n="todayCalories">Calories aujourd'hui</span>
+          <span class="card-value" id="dashKcal">0</span>
+          <div class="progress"><div class="progress-bar" id="dashKcalBar"></div></div>
+        </div>
+        <div class="card">
+          <span class="card-label" data-i18n="todayProtein">Protéines aujourd'hui</span>
+          <span class="card-value" id="dashProtein">0 g</span>
+        </div>
+        <div class="card">
+          <span class="card-label" data-i18n="currentBmi">IMC actuel</span>
+          <span class="card-value" id="dashBmi">–</span>
+          <span class="card-sub" id="dashBmiCat"></span>
+        </div>
+        <div class="card">
+          <span class="card-label" data-i18n="lastWeight">Dernier poids</span>
+          <span class="card-value" id="dashWeight">–</span>
+        </div>
+        <div class="card">
+          <span class="card-label" data-i18n="weekWorkouts">Sport (7 derniers jours)</span>
+          <span class="card-value" id="dashWorkouts">0 min</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="todayMeals">Repas du jour</h3>
+        <ul id="dashMeals" class="entry-list"></ul>
+      </div>
+    </section>
+
+    <!-- ===== IMC ===== -->
+    <section id="bmi" class="panel">
+      <h2 data-i18n="bmiTitle">Calcul de l'IMC</h2>
+      <div class="grid-2">
+        <form id="bmiForm" class="card">
+          <div class="row">
+            <label><span data-i18n="height">Taille (cm)</span><input type="number" id="bmiHeight" min="100" max="250" required></label>
+            <label><span data-i18n="weight">Poids (kg)</span><input type="number" id="bmiWeight" min="25" max="300" step="0.1" required></label>
+          </div>
+          <div class="row">
+            <label><span data-i18n="age">Âge</span><input type="number" id="bmiAge" min="10" max="100" required></label>
+            <label><span data-i18n="sex">Sexe</span>
+              <select id="bmiSex">
+                <option value="m" data-i18n="male">Homme</option>
+                <option value="f" data-i18n="female">Femme</option>
+              </select>
+            </label>
+          </div>
+          <label><span data-i18n="activity">Niveau d'activité</span>
+            <select id="bmiActivity">
+              <option value="1.2" data-i18n="act1">Sédentaire</option>
+              <option value="1.375" data-i18n="act2">Légère</option>
+              <option value="1.55" data-i18n="act3">Modérée</option>
+              <option value="1.725" data-i18n="act4">Intense</option>
+              <option value="1.9" data-i18n="act5">Très intense</option>
+            </select>
+          </label>
+          <label><span data-i18n="goal">Objectif</span>
+            <select id="bmiGoal">
+              <option value="lose" data-i18n="goalLose">Perdre du poids</option>
+              <option value="maintain" data-i18n="goalMaintain">Maintenir</option>
+              <option value="gain" data-i18n="goalGain">Prendre du muscle</option>
+            </select>
+          </label>
+          <button type="submit" class="btn" data-i18n="calculate">Calculer</button>
+        </form>
+        <div class="card" id="bmiResult"></div>
+      </div>
+    </section>
+
+    <!-- ===== ALIMENTS ===== -->
+    <section id="foods" class="panel">
+      <h2 data-i18n="foodsTitle">Recherche d'aliments</h2>
+      <div class="card filters">
+        <input type="search" id="foodSearch" data-i18n-placeholder="searchPlaceholder" placeholder="Rechercher un aliment…">
+        <select id="foodCategory"></select>
+        <select id="foodSort">
+          <option value="name" data-i18n="sortName">Trier par nom</option>
+          <option value="kcal" data-i18n="sortKcal">Calories (croissant)</option>
+          <option value="protein" data-i18n="sortProtein">Protéines (décroissant)</option>
+        </select>
+        <label class="inline"><span data-i18n="maxKcal">kcal max / 100 g</span><input type="number" id="foodMaxKcal" min="0"></label>
+        <label class="inline"><input type="checkbox" id="foodHighProtein"><span data-i18n="highProtein">Riche en protéines</span></label>
+      </div>
+      <p class="muted" id="foodCount"></p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th data-i18n="food">Aliment</th>
+              <th data-i18n="category">Catégorie</th>
+              <th class="num">kcal</th>
+              <th class="num" data-i18n="protein">Protéines</th>
+              <th class="num" data-i18n="carbs">Glucides</th>
+              <th class="num" data-i18n="fat">Lipides</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="foodTable"></tbody>
+        </table>
+      </div>
+      <p class="muted small" data-i18n="per100g">Valeurs pour 100 g.</p>
+    </section>
+
+    <!-- ===== JOURNAL (saisie manuelle) ===== -->
+    <section id="journal" class="panel">
+      <div class="panel-head">
+        <h2 data-i18n="journalTitle">Saisie manuelle</h2>
+        <label class="inline"><span data-i18n="date">Date</span><input type="date" id="journalDate"></label>
+      </div>
+      <div class="grid-3">
+        <form id="mealForm" class="card">
+          <h3 data-i18n="addMeal">Ajouter un repas</h3>
+          <label><span data-i18n="foodName">Nom</span><input type="text" id="mealName" maxlength="80" required></label>
+          <div class="row">
+            <label><span data-i18n="mealType">Repas</span><select id="mealType" class="meal-select"></select></label>
+            <label><span data-i18n="gramsOpt">Quantité (g)</span><input type="number" id="mealGrams" min="0"></label>
+          </div>
+          <label><span data-i18n="kcal">Calories (kcal)</span><input type="number" id="mealKcal" min="0" max="10000" required></label>
+          <div class="row">
+            <label><span data-i18n="proteinG">Protéines (g)</span><input type="number" id="mealProtein" min="0" step="0.1"></label>
+            <label><span data-i18n="carbsG">Glucides (g)</span><input type="number" id="mealCarbs" min="0" step="0.1"></label>
+            <label><span data-i18n="fatG">Lipides (g)</span><input type="number" id="mealFat" min="0" step="0.1"></label>
+          </div>
+          <button type="submit" class="btn" data-i18n="add">Ajouter</button>
+        </form>
+
+        <div class="stack">
+          <form id="weightForm" class="card">
+            <h3 data-i18n="addWeight">Ajouter une pesée</h3>
+            <label><span data-i18n="weight">Poids (kg)</span><input type="number" id="weightKg" min="25" max="300" step="0.1" required></label>
+            <button type="submit" class="btn" data-i18n="add">Ajouter</button>
+          </form>
+          <form id="workoutForm" class="card">
+            <h3 data-i18n="addWorkout">Ajouter une séance</h3>
+            <div class="row">
+              <label><span data-i18n="workoutType">Activité</span><select id="workoutType"></select></label>
+              <label><span data-i18n="duration">Durée (min)</span><input type="number" id="workoutMinutes" min="1" max="600" required></label>
+            </div>
+            <label><span data-i18n="kcalBurnedOpt">Calories brûlées</span><input type="number" id="workoutKcal" min="0"></label>
+            <button type="submit" class="btn" data-i18n="add">Ajouter</button>
+          </form>
+        </div>
+
+        <div class="stack">
+          <div class="card">
+            <h3 data-i18n="dayEntries">Entrées du jour</h3>
+            <ul id="journalList" class="entry-list"></ul>
+            <p class="muted small" id="journalTotals"></p>
+          </div>
+          <div class="card ai-card">
+            <h3><span data-i18n="aiTitle">Saisie par IA</span></h3>
+            <p class="muted small" data-i18n="aiSoon">Bientôt disponible.</p>
+            <textarea disabled data-i18n-placeholder="aiPlaceholder"></textarea>
+            <button class="btn" type="button" disabled data-i18n="aiAnalyze">Analyser</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STATISTIQUES ===== -->
+    <section id="stats" class="panel">
+      <div class="panel-head">
+        <h2 data-i18n="statsTitle">Statistiques</h2>
+        <select id="statsPeriod">
+          <option value="7" data-i18n="days7">7 derniers jours</option>
+          <option value="30" data-i18n="days30">30 derniers jours</option>
+          <option value="90" data-i18n="days90">90 derniers jours</option>
+        </select>
+      </div>
+      <p class="muted" id="statsNotice" hidden data-i18n="chartUnavailable"></p>
+      <div class="cards" id="statsSummary"></div>
+      <div class="grid-2">
+        <div class="card"><h3 data-i18n="chartWeight">Évolution du poids</h3><div class="chart-box"><canvas id="chartWeight"></canvas></div></div>
+        <div class="card"><h3 data-i18n="chartKcal">Calories par jour</h3><div class="chart-box"><canvas id="chartKcal"></canvas></div></div>
+        <div class="card"><h3 data-i18n="chartMacros">Répartition des macros</h3><div class="chart-box"><canvas id="chartMacros"></canvas></div></div>
+        <div class="card"><h3 data-i18n="chartWorkouts">Minutes de sport</h3><div class="chart-box"><canvas id="chartWorkouts"></canvas></div></div>
+      </div>
+    </section>
+
+    <!-- ===== PARAMÈTRES ===== -->
+    <section id="settings" class="panel">
+      <h2 data-i18n="settingsTitle">Paramètres</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3 data-i18n="appearance">Affichage</h3>
+          <label><span data-i18n="theme">Fond (thème)</span>
+            <select id="setTheme">
+              <option value="light" data-i18n="themeLight">Clair</option>
+              <option value="dark" data-i18n="themeDark">Sombre</option>
+              <option value="ocean" data-i18n="themeOcean">Océan</option>
+              <option value="forest" data-i18n="themeForest">Forêt</option>
+              <option value="sunset" data-i18n="themeSunset">Coucher de soleil</option>
+            </select>
+          </label>
+          <label><span data-i18n="shape">Forme</span>
+            <select id="setShape">
+              <option value="rounded" data-i18n="shapeRounded">Arrondie</option>
+              <option value="square" data-i18n="shapeSquare">Carrée</option>
+              <option value="pill" data-i18n="shapePill">Très arrondie</option>
+            </select>
+          </label>
+          <label><span data-i18n="fontSize">Taille du texte</span>
+            <select id="setFont">
+              <option value="small" data-i18n="fontS">Petite</option>
+              <option value="medium" data-i18n="fontM">Moyenne</option>
+              <option value="large" data-i18n="fontL">Grande</option>
+            </select>
+          </label>
+          <label><span data-i18n="language">Langue</span>
+            <select id="setLang">
+              <option value="fr">Français</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="card">
+          <h3 data-i18n="profile">Profil</h3>
+          <label><span data-i18n="name">Prénom</span><input type="text" id="setName" maxlength="40"></label>
+          <label><span data-i18n="kcalTarget">Objectif calorique</span><input type="number" id="setKcalTarget" min="800" max="6000"></label>
+          <button class="btn" id="saveProfile" type="button" data-i18n="save">Enregistrer</button>
+          <h3 class="mt" data-i18n="data">Mes données</h3>
+          <div class="row wrap">
+            <button class="btn btn-secondary" id="exportData" type="button" data-i18n="export">Exporter</button>
+            <label class="btn btn-secondary file-btn"><span data-i18n="import">Importer</span><input type="file" id="importData" accept="application/json,.json" hidden></label>
+            <button class="btn btn-danger" id="resetData" type="button" data-i18n="reset">Tout effacer</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 data-i18n="account">Compte utilisateur</h3>
+          <p class="muted small" data-i18n="accountSoon">Bientôt.</p>
+          <label><input type="email" disabled data-i18n-placeholder="emailPh"></label>
+          <label><input type="password" disabled data-i18n-placeholder="passwordPh"></label>
+          <button class="btn" type="button" disabled data-i18n="createAccount">Créer un compte</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Fenêtre d'ajout d'un aliment au journal -->
+  <dialog id="addFoodDialog">
+    <form id="addFoodForm">
+      <h3 id="addFoodTitle"></h3>
+      <div class="row">
+        <label><span data-i18n="quantity">Quantité (g)</span><input type="number" id="addFoodGrams" min="1" max="5000" required></label>
+        <label><span data-i18n="mealType">Repas</span><select id="addFoodMeal" class="meal-select"></select></label>
+      </div>
+      <label><span data-i18n="date">Date</span><input type="date" id="addFoodDate" required></label>
+      <p id="addFoodPreview" class="muted"></p>
+      <div class="row end">
+        <button type="button" class="btn btn-secondary" id="addFoodCancel" data-i18n="cancel">Annuler</button>
+        <button type="submit" class="btn" data-i18n="add">Ajouter</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/foods.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
